@@ -1,0 +1,7 @@
+
+body { background:#f7fafc; }
+.card-rounded { border-radius: 12px; }
+.balance-title { font-size: 0.95rem; color: #6b7280; }
+.amount { font-size: 1.25rem; font-weight:700; color: #0ea5a4; }
+.navbar-brand { font-weight:700; }
+.table-fixed { table-layout: fixed; word-wrap: break-word; }
