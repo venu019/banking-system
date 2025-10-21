@@ -1,0 +1,46 @@
+{
+  "accountType": "CURRENT",
+  "initialBalance": 2000.00,
+  "bankId": 1
+}
+{
+    "username": "Venu gopal",
+    "email": "venugopalchelliboyina@example.com",
+    "phoneNo": "9",
+    "password": "mySecurePassword123"
+}
+{
+    "email": "chelluboyina@gmail.com",
+    "password": "Venu@019"
+}
+{
+    "aadharNo": "123456789012",
+  "panNo": "ABCDE1234F"
+}
+{
+  "dob": "1990-05-15",
+  "gender": "Male",
+  "addresses": [
+    {
+      "houseNo": "123",
+      "village": "Kondapur",
+      "mandal": "Serilingampally",
+      "district": "Ranga Reddy",
+      "state": "Telangana",
+      "pinCode": "500084"
+    },
+    {
+      "houseNo": "Flat 4B, Green Meadows",
+      "village": "Gachibowli",
+      "mandal": "Serilingampally",
+      "district": "Ranga Reddy",
+      "state": "Telangana",
+      "pinCode": "500032"
+    }
+  ]
+}
+{
+  "cardType": "CREDIT",
+  "cardHolderName": "venu",
+  "limitAmount": 5000.00
+}
