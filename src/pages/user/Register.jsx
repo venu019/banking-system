@@ -2,69 +2,72 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 function Register() {
-  const [name, setName] = useState("");
+  // Add state for the new fields: username and phoneNo
+  const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
+  const [phoneNo, setPhoneNo] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
+  const [error, setError] = useState(null);
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setError(null);
 
     if (password !== confirm) {
-      alert("Passwords do not match");
+      setError("Passwords do not match");
       return;
     }
 
-    const users = JSON.parse(localStorage.getItem("users") || "[]");
-    if (users.find((u) => u.email === email)) {
-      alert("User already exists");
-      return;
+    try {
+      // Include the new fields in the request body
+      const response = await fetch("http://localhost:9001/api/auth/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ username, email, phoneNo, password }),
+      });
+
+      if (response.ok) {
+        // Redirect to login page on successful registration
+        navigate("/login?registered=true");
+      } else {
+        // Handle errors from the backend
+        const errorData = await response.json();
+        setError(errorData.message || "Registration failed. Please try again.");
+      }
+    } catch (err) {
+      setError("An error occurred. Please check your network and try again.");
+      console.error("Registration request failed:", err);
     }
-    const user = { name, email, password, primary: 1000, savings: 0 };
-    users.push(user);
-    localStorage.setItem("users", JSON.stringify(users));
-    localStorage.setItem("currentUser", JSON.stringify(user));
-    localStorage.setItem(`transactions_${email}`, JSON.stringify([]));
-    navigate("/dashboard");
   };
 
   return (
     <div className="container-fluid min-vh-100">
       <div className="row min-vh-100">
-        {/* Left navy statements panel (same as login’s left) */}
+        {/* Left Panel */}
         <div className="col-12 col-lg-6 d-none d-lg-flex p-0">
           <div
             className="w-100 d-flex flex-column justify-content-center align-items-start p-5"
-            style={{
-                  backgroundColor: "#fff",
-                  // backgroundImage: "linear-gradient(135deg, #000080 0%, #0b1a4a 50%, #0d234f 100%)",
-                  color: "#0d234f",
-                }}
-
+            style={{ backgroundColor: "#fff", color: "#0d234f" }}
           >
             <h1 className="display-6 fw-semibold mb-3">Open an account</h1>
             <p className="lead mb-4">
               Join NeoBank for secure banking, instant payments, and smart insights.
             </p>
-            <ul className="list-unstyled mb-0">
-              <li className="mb-2">• Zero-cost savings account</li>
-              <li className="mb-2">• Real-time statements</li>
-              <li className="mb-2">• Loans, cards, and EMI tracking</li>
-            </ul>
           </div>
         </div>
 
-        {/* Right register card with bg image behind it */}
+        {/* Right Registration Form */}
         <div
           className="col-12 col-lg-6 d-flex align-items-center justify-content-center p-4 p-lg-5"
           style={{
-            // Background image behind the card
             backgroundImage:
               "linear-gradient(rgba(13,35,79,0.35), rgba(13,35,79,0.55)), url('https://media.istockphoto.com/id/1132593892/photo/dark-blue-stained-grungy-background-or-texture.jpg?s=612x612&w=0&k=20&c=CJlbaoEBefSO-YNw5v2pO_D__xn-24kmkmqApl4oPLE=')",
             backgroundSize: "cover",
             backgroundPosition: "center",
-            backgroundRepeat: "no-repeat",
           }}
         >
           <div className="card shadow-sm border-0" style={{ maxWidth: 460, width: "100%" }}>
@@ -73,15 +76,18 @@ function Register() {
                 Create account
               </h3>
 
+              {error && <div className="alert alert-danger">{error}</div>}
+
               <form onSubmit={handleSubmit} noValidate>
+                {/* --- NEW FIELD: Username --- */}
                 <div className="mb-3">
-                  <label className="form-label">Name</label>
+                  <label className="form-label">Username</label>
                   <input
                     className="form-control"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
                     required
-                    placeholder="Full name"
+                    placeholder="Choose a username"
                   />
                 </div>
 
@@ -97,6 +103,19 @@ function Register() {
                   />
                 </div>
 
+                {/* --- NEW FIELD: Phone Number --- */}
+                <div className="mb-3">
+                  <label className="form-label">Phone Number</label>
+                  <input
+                    className="form-control"
+                    type="tel" // Use type="tel" for phone numbers
+                    value={phoneNo}
+                    onChange={(e) => setPhoneNo(e.target.value)}
+                    required
+                    placeholder="Your phone number"
+                  />
+                </div>
+
                 <div className="mb-3">
                   <label className="form-label">Password</label>
                   <input
@@ -109,7 +128,6 @@ function Register() {
                     minLength={6}
                   />
                 </div>
-
                 <div className="mb-3">
                   <label className="form-label">Confirm password</label>
                   <input
@@ -122,7 +140,6 @@ function Register() {
                     minLength={6}
                   />
                 </div>
-
                 <button className="btn w-100 text-white" type="submit" style={{ backgroundColor: "#000080" }}>
                   Create account
                 </button>
@@ -136,12 +153,6 @@ function Register() {
                   </Link>
                 </small>
               </div>
-
-              <div className="text-center mt-3">
-                <small className="text-muted">
-                  By creating an account, terms & privacy apply.
-                </small>
-              </div>
             </div>
           </div>
         </div>
@@ -149,4 +160,5 @@ function Register() {
     </div>
   );
 }
+
 export default Register;

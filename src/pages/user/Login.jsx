@@ -4,18 +4,45 @@ import { Link, useNavigate } from "react-router-dom";
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState(null); // State to hold error messages
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  // --- MODIFICATION: Replaced localStorage logic with an API call ---
+  // From your Login.jsx
+const handleSubmit = async (e) => {
     e.preventDefault();
-    const users = JSON.parse(localStorage.getItem("users") || "[]");
-    const found = users.find((u) => u.email === email && u.password === password);
-    if (found) {
-      localStorage.setItem("currentUser", JSON.stringify(found));
-      navigate("/dashboard");
-    } else {
-      alert("Invalid credentials");
+    setError(null);
+
+    try {
+        const response = await fetch("http://localhost:9001/api/auth/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, password }),
+        });
+
+        if (response.ok) {
+            // SUCCESS: This part works fine.
+            const { token } = await response.json();
+            localStorage.setItem("jwtToken", token);
+            navigate("/dashboard");
+        } else {
+            // FAILURE: This is where a 401 response from your backend will be handled.
+            const errorData = await response.json();
+            setError(errorData.message || "Invalid credentials.");
+        }
+    } catch (err) {
+        // This 'catch' block is triggered by the blocked redirect.
+        // It's not a true network error, but the browser's security intervention.
+        setError("Login failed. Please check your credentials.");
+        console.error("Login request failed:", err); // This logs "TypeError: Failed to fetch"
     }
+};
+
+
+  // The Google Sign-In link
+  const googleLogin = () => {
+    // Redirects the user to the backend endpoint that initiates the Google OAuth2 flow
+    window.location.href = "http://localhost:9001/oauth2/authorization/google";
   };
 
   return (
@@ -23,34 +50,28 @@ function Login() {
       <div className="row min-vh-100">
         {/* Left design panel */}
         <div className="col-12 col-lg-6 d-none d-lg-flex p-0">
-  <div
-    className="w-100 d-flex flex-column justify-content-center align-items-start p-5"
-    style={{
-      backgroundImage:
-        "linear-gradient(rgba(13,35,79,0.70), rgba(13,35,79,0.70)), url('https://media.istockphoto.com/id/1132593892/photo/dark-blue-stained-grungy-background-or-texture.jpg?s=612x612&w=0&k=20&c=CJlbaoEBefSO-YNw5v2pO_D__xn-24kmkmqApl4oPLE=')",
-      backgroundSize: "cover",
-      backgroundPosition: "center",
-      backgroundRepeat: "no-repeat",
-      color: "#fff",
-      minHeight: "100vh",
-    }}
-  >
-    <h1 className="display-5 fw-semibold mb-3">Welcome to NeoBank</h1>
-    <p className="lead mb-4">Secure banking, instant payments, and smart insights in one place.</p>
-    <ul className="list-unstyled mb-0">
-      <li className="mb-2">• Real-time balances and statements</li>
-      <li className="mb-2">• Fast transfers and UPI</li>
-      <li className="mb-2">• Loans, cards, and EMI tracking</li>
-    </ul>
-  </div>
-</div>
-
+          <div
+            className="w-100 d-flex flex-column justify-content-center align-items-start p-5"
+            style={{
+              backgroundImage:
+                "linear-gradient(rgba(13,35,79,0.70), rgba(13,35,79,0.70)), url('https://media.istockphoto.com/id/1132593892/photo/dark-blue-stained-grungy-background-or-texture.jpg?s=612x612&w=0&k=20&c=CJlbaoEBefSO-YNw5v2pO_D__xn-24kmkmqApl4oPLE=')",
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+              minHeight: "100vh",
+              color: "#fff",
+            }}
+          >
+            <h1 className="display-5 fw-semibold mb-3">Welcome to NeoBank</h1>
+            <p className="lead mb-4">Secure banking, instant payments, and smart insights in one place.</p>
+          </div>
+        </div>
 
         {/* Right login card */}
         <div className="col-12 col-lg-6 d-flex align-items-center justify-content-center p-4 p-lg-5">
           <div className="card shadow-lg border-0" style={{ maxWidth: 420, width: "100%" }}>
             <div className="card-body p-4 p-lg-5">
               <h3 className="card-title mb-4 text-center">Login</h3>
+              {error && <div className="alert alert-danger">{error}</div>}
               <form onSubmit={handleSubmit}>
                 <div className="mb-3">
                   <label className="form-label">Email</label>
@@ -74,31 +95,30 @@ function Login() {
                     required
                   />
                 </div>
-                <div className="d-flex justify-content-between align-items-center mb-3">
-                  <div className="form-check">
-                    <input className="form-check-input" type="checkbox" id="remember" />
-                    <label className="form-check-label" htmlFor="remember">
-                      Remember me
-                    </label>
-                  </div>
-                  <Link to="/forgot" className="small text-decoration-none">
+                <div className="d-flex justify-content-end mb-3">
+                  <Link to="/forgot-password" className="small text-decoration-none">
                     Forgot password?
                   </Link>
                 </div>
-                <button className="btn btn-primary w-100" type="submit">
+                <button className="btn btn-primary w-100 mb-3" type="submit">
                   Login
                 </button>
               </form>
+
+              <div className="text-center my-3">
+                <span className="text-muted small">OR</span>
+              </div>
+              
+              {/* Google Login Button */}
+              <button onClick={googleLogin} className="btn btn-outline-dark w-100 d-flex align-items-center justify-content-center">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" alt="Google icon" style={{ width: 20, marginRight: 10 }} />
+                Sign in with Google
+              </button>
 
               <div className="mt-4 text-center">
                 <small>
                   Don&apos;t have an account? <Link to="/register">Register</Link>
                 </small>
-              </div>
-
-              {/* Social/auth hints (optional) */}
-              <div className="text-center mt-3">
-                <small className="text-muted">By continuing, terms & privacy apply.</small>
               </div>
             </div>
           </div>
@@ -107,4 +127,5 @@ function Login() {
     </div>
   );
 }
+
 export default Login;

@@ -8,6 +8,7 @@ import ProtectedRoute from './pages/user/ProtectedRoute';
 import MyAccounts from './pages/user/MyAccounts';
 import CardRequest from './pages/user/cards';
 import Payment from './pages/user/Payments';
+import OAuth2RedirectHandler from './pages/user/oauth';
 
 function App(){
   return (
@@ -16,6 +17,7 @@ function App(){
         <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="/login" element={<Login/>} />
         <Route path="/register" element={<Register/>} />
+        <Route path="/oauth2/redirect" element={<OAuth2RedirectHandler />} />
         <Route path="/dashboard" element={
           <ProtectedRoute><Dashboard/></ProtectedRoute>
         } />
