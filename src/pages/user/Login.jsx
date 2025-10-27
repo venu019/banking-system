@@ -1,63 +1,61 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import axios from "axios";
 
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState(null); // State to hold error messages
+  const [error, setError] = useState(null);
+  const [loginSuccess, setLoginSuccess] = useState(false);
   const navigate = useNavigate();
 
-  // --- MODIFICATION: Replaced localStorage logic with an API call ---
-  // From your Login.jsx
-const handleSubmit = async (e) => {
+  useEffect(() => {
+    if (loginSuccess) {
+      navigate("/dashboard");
+    }
+  }, [loginSuccess, navigate]);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
 
     try {
-        const response = await fetch("http://localhost:9001/api/auth/login", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email, password }),
-        });
+      const response = await axios.post("http://localhost:9001/api/auth/login", {
+        email,
+        password,
+      });
 
-        if (response.ok) {
-            // SUCCESS: This part works fine.
-            const { token } = await response.json();
-            localStorage.setItem("jwtToken", token);
-            navigate("/dashboard");
-        } else {
-            // FAILURE: This is where a 401 response from your backend will be handled.
-            const errorData = await response.json();
-            setError(errorData.message || "Invalid credentials.");
-        }
+      // --- CORRECTED: Store the entire response object in localStorage["user"] ---
+      localStorage.setItem("user", JSON.stringify(response.data));
+      // You can also store the token separately if needed elsewhere
+      localStorage.setItem("jwtToken", response.data.accessToken);
+
+      setLoginSuccess(true);
+
     } catch (err) {
-        // This 'catch' block is triggered by the blocked redirect.
-        // It's not a true network error, but the browser's security intervention.
-        setError("Login failed. Please check your credentials.");
-        console.error("Login request failed:", err); // This logs "TypeError: Failed to fetch"
+      if (err.response && err.response.data) {
+        setError(err.response.data.message || "Invalid credentials.");
+      } else {
+        setError("Login failed. Please try again.");
+      }
+      console.error("Login request failed:", err);
     }
-};
-
-
-  // The Google Sign-In link
-  const googleLogin = () => {
-    // Redirects the user to the backend endpoint that initiates the Google OAuth2 flow
-    window.location.href = "http://localhost:9001/oauth2/authorization/google";
   };
 
+  const googleLogin = () => {
+    window.location.href = "http://localhost:9001/oauth2/authorization/google";
+  };
+  
+  // The rest of the JSX for the Login component remains the same...
   return (
     <div className="container-fluid min-vh-100">
       <div className="row min-vh-100">
-        {/* Left design panel */}
         <div className="col-12 col-lg-6 d-none d-lg-flex p-0">
           <div
             className="w-100 d-flex flex-column justify-content-center align-items-start p-5"
             style={{
-              backgroundImage:
-                "linear-gradient(rgba(13,35,79,0.70), rgba(13,35,79,0.70)), url('https://media.istockphoto.com/id/1132593892/photo/dark-blue-stained-grungy-background-or-texture.jpg?s=612x612&w=0&k=20&c=CJlbaoEBefSO-YNw5v2pO_D__xn-24kmkmqApl4oPLE=')",
+              backgroundImage: "linear-gradient(rgba(13,35,79,0.70), rgba(13,35,79,0.70)), url('https://media.istockphoto.com/id/1132593892/photo/dark-blue-stained-grungy-background-or-texture.jpg?s=612x612&w=0&k=20&c=CJlbaoEBefSO-YNw5v2pO_D__xn-24kmkmqApl4oPLE=')",
               backgroundSize: "cover",
-              backgroundPosition: "center",
-              minHeight: "100vh",
               color: "#fff",
             }}
           >
@@ -65,8 +63,6 @@ const handleSubmit = async (e) => {
             <p className="lead mb-4">Secure banking, instant payments, and smart insights in one place.</p>
           </div>
         </div>
-
-        {/* Right login card */}
         <div className="col-12 col-lg-6 d-flex align-items-center justify-content-center p-4 p-lg-5">
           <div className="card shadow-lg border-0" style={{ maxWidth: 420, width: "100%" }}>
             <div className="card-body p-4 p-lg-5">
@@ -75,51 +71,21 @@ const handleSubmit = async (e) => {
               <form onSubmit={handleSubmit}>
                 <div className="mb-3">
                   <label className="form-label">Email</label>
-                  <input
-                    className="form-control"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="name@example.com"
-                    required
-                  />
+                  <input className="form-control" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@example.com" required />
                 </div>
                 <div className="mb-2">
                   <label className="form-label">Password</label>
-                  <input
-                    type="password"
-                    className="form-control"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                    required
-                  />
+                  <input type="password" className="form-control" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" required />
                 </div>
-                <div className="d-flex justify-content-end mb-3">
-                  <Link to="/forgot-password" className="small text-decoration-none">
-                    Forgot password?
-                  </Link>
-                </div>
-                <button className="btn btn-primary w-100 mb-3" type="submit">
-                  Login
-                </button>
+                <div className="d-flex justify-content-end mb-3"><Link to="/forgot-password" className="small text-decoration-none">Forgot password?</Link></div>
+                <button className="btn btn-primary w-100 mb-3" type="submit">Login</button>
               </form>
-
-              <div className="text-center my-3">
-                <span className="text-muted small">OR</span>
-              </div>
-              
-              {/* Google Login Button */}
+              <div className="text-center my-3"><span className="text-muted small">OR</span></div>
               <button onClick={googleLogin} className="btn btn-outline-dark w-100 d-flex align-items-center justify-content-center">
                 <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" alt="Google icon" style={{ width: 20, marginRight: 10 }} />
                 Sign in with Google
               </button>
-
-              <div className="mt-4 text-center">
-                <small>
-                  Don&apos;t have an account? <Link to="/register">Register</Link>
-                </small>
-              </div>
+              <div className="mt-4 text-center"><small>Don&apos;t have an account? <Link to="/register">Register</Link></small></div>
             </div>
           </div>
         </div>

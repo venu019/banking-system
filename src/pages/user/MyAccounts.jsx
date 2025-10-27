@@ -1,390 +1,195 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from 'axios';
+import AppNavbar from "../../components/Navbar";
+import Footer from "../../components/Footer";
+
+// API endpoints
+const ACCOUNTS_API_URL = 'http://localhost:9002/api/accounts';
+const BANKS_API_URL = 'http://localhost:9003/api/branches';
 
 function MyAccounts() {
-  const navigate = useNavigate();
-  const [user, setUser] = useState(null);
-  const [accounts, setAccounts] = useState([]);
-  const [showForm, setShowForm] = useState(false);
+    const navigate = useNavigate();
+    const [user, setUser] = useState(null);
+    const [accounts, setAccounts] = useState([]);
+    const [banks, setBanks] = useState([]);
+    const [bankMap, setBankMap] = useState(new Map());
+    const [showForm, setShowForm] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
 
-  // Form fields
-  const [fullName, setFullName] = useState("");
-  const [branchCode, setBranchCode] = useState("");
-  const [branchCity, setBranchCity] = useState("");
-  const [branchState, setBranchState] = useState("");
-  const [addressLine1, setAddressLine1] = useState("");
-  const [addressLine2, setAddressLine2] = useState("");
-  const [pincode, setPincode] = useState("");
+    // Form state
+    const [selectedBankId, setSelectedBankId] = useState('');
+    const [accountType, setAccountType] = useState('SAVINGS');
 
-  useEffect(() => {
-    const u = JSON.parse(localStorage.getItem("currentUser"));
-    if (!u) {
-      navigate("/login");
-      return;
-    }
-    setUser(u);
-    const key = "bank_accounts_" + u.email;
-    const stored = JSON.parse(localStorage.getItem(key) || "[]");
-    setAccounts(stored);
-  }, [navigate]);
+    useEffect(() => {
+        const storedData = JSON.parse(localStorage.getItem("user"));
+        if (!storedData || !storedData.user) {
+            navigate("/login");
+            return;
+        }
+        
+        const userDetails = storedData.user;
+        setUser(userDetails);
 
-  const saveAccounts = (list) => {
-    const key = "bank_accounts_" + user.email;
-    localStorage.setItem(key, JSON.stringify(list));
-    setAccounts(list);
-  };
+        const token = storedData.accessToken;
+        const headers = { 'Authorization': `Bearer ${token}` };
 
-  // Helpers to generate accountNumber and IFSC
-  const generateAccountNumber = () => {
-    // 12-digit numeric string
-    let s = "";
-    for (let i = 0; i < 12; i++) {
-      s += Math.floor(Math.random() * 10);
-    }
-    return s;
-  };
+        const fetchInitialData = async () => {
+            try {
+                const [accountsResponse, banksResponse] = await Promise.all([
+                    axios.get(`${ACCOUNTS_API_URL}/user/${userDetails.id}`, { headers }),
+                    axios.get(BANKS_API_URL, { headers })
+                ]);
+                
+                const transformedAccounts = accountsResponse.data.map(acc => ({
+                    ...acc,
+                    accountNumber: acc.accountNo,
+                    openedAt: acc.dateIssued
+                }));
+                setAccounts(transformedAccounts);
 
-  const computeIFSC = (branch) => {
-    // Simple IFSC pattern: BANK0 + BRANCHCODE (max 6 chars alnum uppercased)
-    const sanitized = (branch || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6);
-    return `BANK0${sanitized.padEnd(6, "X")}`;
-  };
+                const fetchedBanks = banksResponse.data;
+                setBanks(fetchedBanks);
+                const newBankMap = new Map(fetchedBanks.map(bank => [bank.id, bank]));
+                setBankMap(newBankMap);
 
-  const openingBalance = useMemo(() => 2000, []);
+            } catch (error) {
+                console.error("Failed to fetch initial account data:", error);
+                alert("Could not load account data. Please ensure backend services are running and you are logged in correctly.");
+            } finally {
+                setIsLoading(false);
+            }
+        };
 
-  const requestAccount = () => {
-    setShowForm(true);
-    if (user?.name && !fullName) setFullName(user.name);
-  };
+        fetchInitialData();
+    }, [navigate]);
 
-  const createAccount = (e) => {
-    e.preventDefault();
-
-    // Minimal client-side validation
-    if (!fullName.trim()) return alert("Enter full name");
-    if (!branchCode.trim()) return alert("Enter branch code");
-    if (!branchCity.trim()) return alert("Enter branch city");
-    if (!branchState.trim()) return alert("Enter branch state");
-    if (!addressLine1.trim()) return alert("Enter address line 1");
-    if (!pincode.trim()) return alert("Enter pincode");
-
-    const accountNumber = generateAccountNumber();
-    const ifsc = computeIFSC(branchCode);
-
-    const newAccount = {
-      id: crypto.randomUUID(),
-      holderName: fullName.trim(),
-      type: "SAVINGS",
-      accountNumber,
-      ifsc,
-      branch: {
-        code: branchCode.trim(),
-        city: branchCity.trim(),
-        state: branchState.trim(),
-      },
-      address: {
-        line1: addressLine1.trim(),
-        line2: addressLine2.trim(),
-        pincode: pincode.trim(),
-      },
-      balance: openingBalance,
-      currency: "INR",
-      status: "ACTIVE",
-      openedAt: new Date().toISOString(),
+    const handleLogout = () => {
+        localStorage.removeItem("user");
+        localStorage.removeItem("jwtToken");
+        navigate("/login");
     };
 
-    const list = [newAccount, ...accounts];
-    saveAccounts(list);
+    const createAccount = async (e) => {
+        e.preventDefault();
+        if (!selectedBankId || !accountType) {
+            return alert("Please select a bank and account type.");
+        }
 
-    // Reset form and hide
-    setShowForm(false);
-    setFullName(user?.name || "");
-    setBranchCode("");
-    setBranchCity("");
-    setBranchState("");
-    setAddressLine1("");
-    setAddressLine2("");
-    setPincode("");
+        const token = JSON.parse(localStorage.getItem("user"))?.accessToken;
+        const payload = {
+            userId: user.id,
+            accountType,
+            bankId: selectedBankId,
+            initialBalance: 0,
+        };
 
-    alert(`Account created!\nNumber: ${accountNumber}\nIFSC: ${ifsc}`);
-  };
+        try {
+            const response = await axios.post(ACCOUNTS_API_URL, payload, { headers: { 'Authorization': `Bearer ${token}` } });
+            
+            const newAccount = { ...response.data, accountNumber: response.data.accountNo, openedAt: response.data.dateIssued };
+            setAccounts([newAccount, ...accounts]);
+            
+            setShowForm(false);
+            setSelectedBankId('');
+            setAccountType('SAVINGS');
+            
+            alert(`Account request submitted successfully! Account Number: ${newAccount.accountNumber}`);
+        } catch (error) {
+            console.error("Failed to create account:", error.response?.data || error.message);
+            alert("Failed to create account. Please check the console.");
+        }
+    };
+    
+    const viewStatements = (acc) => navigate(`/accounts/statements?acc=${acc.accountNumber}`);
+    const viewTransactions = (acc) => navigate(`/transactions?acc=${acc.accountNumber}`);
 
-  const viewStatements = (acc) => {
-    navigate(`/accounts/statements?acc=${acc.accountNumber}`);
-  };
+    if (isLoading) {
+        return <div className="text-center p-5">Loading Accounts...</div>;
+    }
 
-  const viewTransactions = (acc) => {
-    navigate(`/transactions?acc=${acc.accountNumber}`);
-  };
+    return (
+        <>
+            <AppNavbar onLogout={handleLogout} />
+            <div className="container py-4">
+                <div className="d-flex align-items-center justify-content-between mb-3">
+                    <h2 className="mb-0">My Accounts</h2>
+                    {!showForm && <button className="btn text-white" style={{ backgroundColor: "#000080" }} onClick={() => setShowForm(true)}>Request New Account</button>}
+                </div>
 
-  if (!user) return null;
+                {showForm && (
+                     <div className="card shadow-sm border-0 mb-4">
+                        <div className="card-body">
+                            <div className="d-flex align-items-center justify-content-between"><h5 className="card-title mb-0">Request New Bank Account</h5><button className="btn btn-sm btn-outline-secondary" onClick={() => setShowForm(false)}>Cancel</button></div>
+                            <form onSubmit={createAccount} className="row g-3 needs-validation mt-2">
+                                <div className="col-md-6"><label className="form-label">Account Holder</label><input className="form-control" value={user.username} disabled readOnly /></div>
+                                <div className="col-md-6"><label htmlFor="bankId" className="form-label">Bank Branch</label><select id="bankId" className="form-select" value={selectedBankId} onChange={(e) => setSelectedBankId(e.target.value)} required><option value="" disabled>-- Select a Bank Branch --</option>{banks.map(bank => (<option key={bank.id} value={bank.id}>{bank.branchName}, {bank.address.city}</option>))}</select></div>
+                                <div className="col-md-6"><label htmlFor="accountType" className="form-label">Account Type</label><select id="accountType" className="form-select" value={accountType} onChange={(e) => setAccountType(e.target.value)} required><option value="SAVINGS">Savings</option><option value="CURRENT">Current</option><option value="SALARY">Salary</option><option value="FIXED_DEPOSIT">Fixed Deposit</option></select></div>
+                                <div className="col-12 d-flex justify-content-end"><button type="submit" className="btn text-white" style={{ backgroundColor: "#000080" }}>Submit Request</button></div>
+                            </form>
+                        </div>
+                    </div>
+                )}
 
-  return (
-    <div className="container py-4">
-      <div className="d-flex align-items-center justify-content-between mb-3">
-        <h2 className="mb-0">My Accounts</h2>
-        {!showForm && (
-          <button
-            className="btn text-white"
-            style={{ backgroundColor: "#000080" }}
-            onClick={requestAccount}
-          >
-            Request New Account
-          </button>
-        )}
-      </div>
-
-      {/* Request / Create Account Form */}
-      {showForm && (
-        <div className="card shadow-sm border-0 mb-4">
-          <div className="card-body">
-            <div className="d-flex align-items-center justify-content-between">
-              <h5 className="card-title mb-0">Request New Account</h5>
-              <button
-                className="btn btn-sm btn-outline-secondary"
-                onClick={() => setShowForm(false)}
-              >
-                Cancel
-              </button>
+                {accounts.length === 0 ? (
+                    <div className="card border-0 shadow-sm"><div className="card-body"><p className="mb-0">No accounts found. Click "Request New Account" to get started.</p></div></div>
+                ) : (
+                    <div className="row g-3">
+                        {accounts.map((acc) => {
+                            const bank = bankMap.get(acc.bankId);
+                            return (
+                                <div className="col-12" key={acc.id}>
+                                    <div className="card border-0 shadow-lg">
+                                        <div className="card-body">
+                                            <div className="d-flex justify-content-between align-items-start">
+                                                <div className="d-flex align-items-center gap-3">
+                                                    <div className="rounded-circle d-flex align-items-center justify-content-center" style={{ width: 44, height: 44, backgroundColor: "#e8ecff", color: "#000080" }}><i className="bi bi-bank2" /></div>
+                                                    <div>
+                                                        <h6 className="mb-0">{acc.accountType.replace('_', ' ')} Account</h6>
+                                                        <small className="text-muted">{bank ? bank.branchName : "Branch details not found"}</small>
+                                                    </div>
+                                                </div>
+                                                <span className={`badge ${acc.status === "ACTIVE" ? "bg-success" : "bg-secondary"}`}>{acc.status}</span>
+                                            </div>
+                                            <hr/>
+                                            <div className="row g-3 mb-3">
+                                                <div className="col-sm-6 col-md-4"><small className="text-muted d-block">Account Number</small><div className="fw-semibold text-truncate" title={acc.accountNumber}>{acc.accountNumber}</div></div>
+                                                <div className="col-sm-6 col-md-4"><small className="text-muted d-block">IFSC Code</small><div className="fw-semibold text-truncate">{bank ? bank.ifscCode : 'N/A'}</div></div>
+                                                <div className="col-sm-12 col-md-4"><small className="text-muted d-block">Date Opened</small><div className="fw-semibold text-truncate">{new Date(acc.openedAt).toLocaleDateString()}</div></div>
+                                                {bank && (
+                                                    <>
+                                                        <div className="col-sm-12 col-md-8">
+                                                            <small className="text-muted d-block">Branch Address</small>
+                                                            <div className="fw-semibold text-truncate">{`${bank.address.street}, ${bank.address.city}, ${bank.address.state} - ${bank.address.postalCode}`}</div>
+                                                        </div>
+                                                        <div className="col-sm-12 col-md-4">
+                                                            <small className="text-muted d-block">Branch Contact</small>
+                                                            <div className="fw-semibold text-truncate">{bank.contact.email} | {bank.contact.phoneNumber}</div>
+                                                        </div>
+                                                    </>
+                                                )}
+                                            </div>
+                                            <div className="d-flex flex-column flex-md-row align-items-md-center justify-content-between">
+                                                <div>
+                                                    <small className="text-muted d-block">Current Balance</small>
+                                                    <div className="fw-bold" style={{ fontSize: 28, color: "#000080" }}>{new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(acc.balance)}</div>
+                                                </div>
+                                                <div className="d-flex gap-2 mt-2 mt-md-0">
+                                                    <button className="btn btn-sm btn-outline-primary" onClick={() => viewTransactions(acc)}>Transactions</button>
+                                                    <button className="btn btn-sm btn-outline-primary" onClick={() => viewStatements(acc)}>Statements</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
             </div>
-            <p className="text-muted mt-2 mb-3">
-              Provide branch/location and address details. A savings account will be created with a default balance of ₹2000.
-            </p>
-
-            <form onSubmit={createAccount} className="row g-3">
-              <div className="col-md-6">
-                <label className="form-label">Full Name</label>
-                <input
-                  className="form-control"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  placeholder="Account holder name"
-                  required
-                />
-              </div>
-
-              <div className="col-md-6">
-                <label className="form-label">Branch Code</label>
-                <input
-                  className="form-control"
-                  value={branchCode}
-                  onChange={(e) => setBranchCode(e.target.value)}
-                  placeholder="e.g., BLR001"
-                  required
-                />
-              </div>
-
-              <div className="col-md-4">
-                <label className="form-label">Branch City</label>
-                <input
-                  className="form-control"
-                  value={branchCity}
-                  onChange={(e) => setBranchCity(e.target.value)}
-                  placeholder="City"
-                  required
-                />
-              </div>
-
-              <div className="col-md-4">
-                <label className="form-label">Branch State</label>
-                <input
-                  className="form-control"
-                  value={branchState}
-                  onChange={(e) => setBranchState(e.target.value)}
-                  placeholder="State"
-                  required
-                />
-              </div>
-
-              <div className="col-md-4">
-                <label className="form-label">Pincode</label>
-                <input
-                  className="form-control"
-                  value={pincode}
-                  onChange={(e) => setPincode(e.target.value)}
-                  placeholder="e.g., 560001"
-                  required
-                />
-              </div>
-
-              <div className="col-md-6">
-                <label className="form-label">Address Line 1</label>
-                <input
-                  className="form-control"
-                  value={addressLine1}
-                  onChange={(e) => setAddressLine1(e.target.value)}
-                  placeholder="Street, locality"
-                  required
-                />
-              </div>
-
-              <div className="col-md-6">
-                <label className="form-label">Address Line 2</label>
-                <input
-                  className="form-control"
-                  value={addressLine2}
-                  onChange={(e) => setAddressLine2(e.target.value)}
-                  placeholder="Apartment, landmark (optional)"
-                />
-              </div>
-
-              <div className="col-12 d-flex justify-content-end">
-                <button type="submit" className="btn text-white" style={{ backgroundColor: "#000080" }}>
-                  Create Account
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Accounts list */}
-{accounts.length === 0 ? (
-  <div className="card border-0 shadow-sm">
-    <div className="card-body">
-      <p className="mb-3">No accounts yet.</p>
-      <button
-        className="btn text-white"
-        style={{ backgroundColor: "#000080" }}
-        onClick={requestAccount}
-      >
-        Request New Account
-      </button>
-    </div>
-  </div>
-) : (
-  <div className="row g-3">
-    {accounts.map((acc) => (
-      <div className="col-12" key={acc.id}>
-        {/* Slightly taller card (~10-15% more than before), no scroll */}
-        <div
-          className="card border-0 shadow-lg position-relative"
-          style={{ height: 270, overflow: "hidden" }}
-        >
-
-
-          {/* Header area with icon + status */}
-          <div className="d-flex align-items-center justify-content-between px-3 pt-3">
-            <div className="d-flex align-items-center gap-3">
-              <div
-                className="rounded-circle d-flex align-items-center justify-content-center"
-                style={{
-                  width: 44,
-                  height: 44,
-                  backgroundColor: "#e8ecff",
-                  color: "#000080",
-                }}
-              >
-                {/* If using Bootstrap Icons, include the CSS in index.html */}
-                <i className="bi bi-bank2" />
-              </div>
-              <div>
-                <h6 className="mb-0">{acc.type} Account</h6>
-                <small className="text-muted">
-                  {acc.branch.city}, {acc.branch.state}
-                </small>
-              </div>
-            </div>
-
-            <span
-              className={`badge ${
-                acc.status === "ACTIVE" ? "bg-success" : "bg-secondary"
-              }`}
-            >
-              {acc.status}
-            </span>
-          </div>
-
-          {/* Body content, no overflow scroll */}
-          <div className="px-3 pb-3 pt-2">
-            {/* Two-column info grid */}
-            <div className="row g-3">
-              <div className="col-sm-4">
-                <small className="text-muted d-block">Account Number</small>
-                <div
-                  className="fw-semibold text-truncate"
-                  title={acc.accountNumber}
-                >
-                  {acc.accountNumber}
-                </div>
-              </div>
-              <div className="col-sm-4">
-                <small className="text-muted d-block">IFSC</small>
-                <div className="fw-semibold text-truncate" title={acc.ifsc}>
-                  {acc.ifsc}
-                </div>
-              </div>
-
-              <div className="col-sm-4">
-                <small className="text-muted d-block">Branch Code</small>
-                <div className="text-truncate" title={acc.branch.code}>
-                  {acc.branch.code}
-                </div>
-              </div>
-
-              <div className="col-sm-4">
-                <small className="text-muted d-block">Opened</small>
-                <div
-                  className="text-truncate"
-                  title={new Date(acc.openedAt).toLocaleString()}
-                >
-                  {new Date(acc.openedAt).toLocaleDateString()}
-                </div>
-              </div>
-
-              <div className="col-8">
-                <small className="text-muted d-block">Address</small>
-                <div
-                  className="text-truncate"
-                  title={`${acc.address.line1}${
-                    acc.address.line2 ? `, ${acc.address.line2}` : ""
-                  }, ${acc.address.pincode}`}
-                >
-                  {acc.address.line1}
-                  {acc.address.line2 ? `, ${acc.address.line2}` : ""},{" "}
-                  {acc.address.pincode}
-                </div>
-              </div>
-            </div>
-
-            {/* Balance + actions row */}
-            <div className="d-flex flex-column flex-md-row align-items-md-center justify-content-between mt-3">
-              <div>
-                <small className="text-muted d-block">Current Balance</small>
-                <div
-                  className="fw-bold"
-                  style={{ fontSize: 28, color: "#000080" }}
-                >
-                  ₹ {Number(acc.balance).toFixed(2)}
-                </div>
-              </div>
-
-              <div className="d-flex gap-2 mt-2 mt-md-0">
-                <button
-                  className="btn btn-sm btn-outline-primary"
-                  style={{ borderColor: "#000080", color: "#000080" }}
-                  onClick={() => viewTransactions(acc)}
-                >
-                  View Transactions
-                </button>
-                <button
-                  className="btn btn-sm btn-outline-primary"
-                  style={{ borderColor: "#000080", color: "#000080" }}
-                  onClick={() => viewStatements(acc)}
-                >
-                  Statements
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    ))}
-  </div>
-)}
-
-    </div>
-  );
+            <Footer />
+        </>
+    );
 }
 
 export default MyAccounts;
