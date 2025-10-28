@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import axios from 'axios'; // Import axios
 
 function Register() {
   // Add state for the new fields: username and phoneNo
@@ -10,6 +11,41 @@ function Register() {
   const [confirm, setConfirm] = useState("");
   const [error, setError] = useState(null);
   const navigate = useNavigate();
+
+  // Define notification service URL
+  const NOTIFICATION_API_URL = "http://localhost:8082/api/notify/send";
+
+  // --- NEW: Function to send welcome notification ---
+  const sendWelcomeNotification = async (userEmail, userName) => {
+    const emailBody = `
+      <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+        <h2 style="color: #000080;">Welcome to NeoBank!</h2>
+        <p>Dear ${userName},</p>
+        <p>Thank you for creating an account with NeoBank. We're thrilled to have you with us.</p>
+        <p>You can now log in to your account to explore our services, manage your finances, and much more.</p>
+        <p>If you have any questions, feel free to contact our support team.</p>
+        <br/>
+        <p>Best Regards,<br/>The NeoBank Team</p>
+      </div>
+    `;
+
+    const notificationPayload = {
+      to: userEmail,
+      subject: "Welcome to NeoBank - Your Registration is Complete!",
+      body: emailBody,
+    };
+
+    try {
+      // Use axios to send the request
+      await axios.post(NOTIFICATION_API_URL, notificationPayload, {
+        headers: { 'Content-Type': 'application/json' }
+      });
+      console.log("Welcome notification email sent successfully.");
+    } catch (err) {
+      // Log the error but don't block the user flow
+      console.error("Failed to send welcome notification:", err.response?.data || err.message);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -31,6 +67,9 @@ function Register() {
       });
 
       if (response.ok) {
+        // --- SEND NOTIFICATION ON SUCCESS ---
+        await sendWelcomeNotification(email, username);
+        
         // Redirect to login page on successful registration
         navigate("/login?registered=true");
       } else {

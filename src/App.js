@@ -16,6 +16,7 @@ import BankDashboard from './pages/admin/bankDashboard';
 
 // Admin Pages
 import BranchManagement from './pages/admin/BranchMangement';
+import AdminCardManagement from './pages/admin/CardManagement';
 
 function App() {
   return (
@@ -38,7 +39,7 @@ function App() {
         {/* Admin Protected Route */}
         <Route path="/admin/branches" element={<ProtectedRoute><BranchManagement /></ProtectedRoute>} />
         <Route path="/admin/bank-dashboard" element={<ProtectedRoute><BankDashboard /></ProtectedRoute>} />
-
+        <Route path="/admin/cardsmanagement" element={<ProtectedRoute><AdminCardManagement /></ProtectedRoute>} />
         {/* Fallback Route for any unknown paths */}
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>

@@ -7,6 +7,7 @@ import Footer from "../../components/Footer";
 // API endpoints
 const ACCOUNTS_API_URL = 'http://localhost:9002/api/accounts';
 const BANKS_API_URL = 'http://localhost:9003/api/branches';
+const NOTIFICATION_API_URL = 'http://localhost:8082/api/notify/send'; // Notification Service Endpoint
 
 function MyAccounts() {
     const navigate = useNavigate();
@@ -70,6 +71,46 @@ function MyAccounts() {
         navigate("/login");
     };
 
+    // --- NEW: Function to send notification ---
+    const sendAccountCreatedNotification = async (account, userDetails, token) => {
+        const bank = bankMap.get(account.bankId);
+        const emailBody = `
+            <div style="font-family: Arial, sans-serif; line-height: 1.6;">
+                <h2>Account Creation Successful!</h2>
+                <p>Dear ${userDetails.username},</p>
+                <p>We are pleased to inform you that your new bank account has been successfully created. Please find the details below:</p>
+                <table style="width: 100%; border-collapse: collapse;">
+                    <tr style="border-bottom: 1px solid #ddd;"><td style="padding: 8px;"><strong>Account Number:</strong></td><td style="padding: 8px;">${account.accountNumber}</td></tr>
+                    <tr style="border-bottom: 1px solid #ddd;"><td style="padding: 8px;"><strong>Account Type:</strong></td><td style="padding: 8px;">${account.accountType.replace('_', ' ')}</td></tr>
+                    <tr style="border-bottom: 1px solid #ddd;"><td style="padding: 8px;"><strong>Bank Branch:</strong></td><td style="padding: 8px;">${bank ? `${bank.branchName}, ${bank.address.city}` : 'N/A'}</td></tr>
+                    <tr style="border-bottom: 1px solid #ddd;"><td style="padding: 8px;"><strong>Date Opened:</strong></td><td style="padding: 8px;">${new Date(account.openedAt).toLocaleDateString()}</td></tr>
+                    <tr style="border-bottom: 1px solid #ddd;"><td style="padding: 8px;"><strong>Current Balance:</strong></td><td style="padding: 8px;">${new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(account.balance)}</td></tr>
+                </table>
+                <p>Thank you for banking with us. You can now manage your account through our online portal.</p>
+                <p>Best Regards,<br/>Your Bank</p>
+            </div>
+        `;
+
+        const notificationPayload = {
+            to: userDetails.email,
+            subject: "Your New Bank Account Has Been Created Successfully",
+            body: emailBody
+        };
+
+        try {
+            await axios.post(NOTIFICATION_API_URL, notificationPayload, { 
+                headers: { 
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json' // Explicitly set content type
+                } 
+            });
+            console.log("Account creation notification email sent successfully.");
+        } catch (error) {
+            console.error("Failed to send account creation notification:", error.response?.data || error.message);
+            // We don't alert the user here, as the primary action (account creation) was successful.
+        }
+    };
+
     const createAccount = async (e) => {
         e.preventDefault();
         if (!selectedBankId || !accountType) {
@@ -89,6 +130,9 @@ function MyAccounts() {
             
             const newAccount = { ...response.data, accountNumber: response.data.accountNo, openedAt: response.data.dateIssued };
             setAccounts([newAccount, ...accounts]);
+            
+            // --- CALL NOTIFICATION SERVICE ---
+            await sendAccountCreatedNotification(newAccount, user, token);
             
             setShowForm(false);
             setSelectedBankId('');
@@ -118,7 +162,7 @@ function MyAccounts() {
                 </div>
 
                 {showForm && (
-                     <div className="card shadow-sm border-0 mb-4">
+                    <div className="card shadow-sm border-0 mb-4">
                         <div className="card-body">
                             <div className="d-flex align-items-center justify-content-between"><h5 className="card-title mb-0">Request New Bank Account</h5><button className="btn btn-sm btn-outline-secondary" onClick={() => setShowForm(false)}>Cancel</button></div>
                             <form onSubmit={createAccount} className="row g-3 needs-validation mt-2">

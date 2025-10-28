@@ -20,7 +20,8 @@ export default function AppNavbar() {
 
     const handleLogout = () => {
         localStorage.removeItem("user");
-        localStorage.removeItem("jwtToken");
+        // It's good practice to remove any other session-related items
+        localStorage.removeItem("jwtToken"); 
         navigate("/login");
     };
 
@@ -61,9 +62,18 @@ export default function AppNavbar() {
                                         <li><NavLink to="/services/transactions" className="dropdown-item">Transactions</NavLink></li>
                                     </ul>
                                 </li>
+                                
+                                {/* --- ADMIN SECTION --- */}
                                 {isAdmin && (
-                                    <li className="nav-item">
-                                        <NavLink to="/admin/branches" className="nav-link">Branch Management</NavLink>
+                                    <li className="nav-item dropdown">
+                                        <a className="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                                            Admin
+                                        </a>
+                                        <ul className="dropdown-menu dropdown-menu-dark">
+                                            <li><NavLink to="/admin/branches" className="dropdown-item">Branch Management</NavLink></li>
+                                            {/* --- NEW LINK ADDED HERE --- */}
+                                            <li><NavLink to="/admin/cardsmanagement" className="dropdown-item">Card Management</NavLink></li>
+                                        </ul>
                                     </li>
                                 )}
                             </ul>
