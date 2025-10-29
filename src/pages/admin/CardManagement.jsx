@@ -4,10 +4,9 @@ import AppNavbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
 import { useNavigate } from "react-router-dom";
 
-// API Endpoints
+
 const CARDS_API_URL = 'http://localhost:9004/cards';
-// CORRECTED: Changed /api/user to /api/users
-const USERS_API_URL = 'http://localhost:9001/api/users'; 
+const USERS_API_URL = 'http://localhost:9001/api/user'; 
 const ACCOUNTS_API_URL = 'http://localhost:9002/api/accounts';
 
 function AdminCardManagement() {
@@ -60,6 +59,7 @@ function AdminCardManagement() {
             }
             
             setUserMap(newUserMap);
+            console.log(userMap);
             setAccountMap(newAccountMap);
 
         } catch (error) {
@@ -151,7 +151,7 @@ function AdminCardManagement() {
                                     return (
                                         <tr key={card.id}>
                                             <td>{user ? user.username : `ID: ${card.userId}`}</td>
-                                            <td>{account ? account.accountNumber : `ID: ${card.accountId}`}</td>
+                                            <td>{account ? account.accountNo : `ID: ${card.accountId}`}</td>
                                             <td>{card.cardType}</td>
                                             <td>
                                                 <span className={`badge ${

@@ -2,18 +2,27 @@ import React from 'react';
 import { Navigate } from 'react-router-dom';
 
 const ProtectedRoute = ({ children }) => {
-  // --- CORRECTED: Check for the "user" object in localStorage ---
-  const user = JSON.parse(localStorage.getItem('user'));
-
-  // You can also check for the token for more robust security
+  // Check for the token first
   const token = localStorage.getItem('jwtToken');
+  
+  // Optionally, check for the user object as well
+  const user = localStorage.getItem('user');
 
-  if (!user || !token) {
-    // If user or token is not found, redirect to the login page
+  console.log("ProtectedRoute Check:");
+  console.log("Token found:", token ? "Yes" : "No");
+  console.log("User found:", user ? "Yes" : "No");
+
+  // The condition to check if the user is authenticated
+  const isAuthenticated = token && user;
+
+  if (!isAuthenticated) {
+    console.log("Redirecting to /login");
+    // If not authenticated, redirect to the login page
     return <Navigate to="/login" replace />;
   }
 
-  // If the user is authenticated, render the children components (the protected page)
+  // If authenticated, render the children components (the protected page)
+  console.log("Access Granted. Rendering protected component.");
   return children;
 };
 

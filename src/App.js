@@ -17,6 +17,8 @@ import BankDashboard from './pages/admin/bankDashboard';
 // Admin Pages
 import BranchManagement from './pages/admin/BranchMangement';
 import AdminCardManagement from './pages/admin/CardManagement';
+import ForgotPassword from './pages/user/forgotpassword';
+import ResetPassword from './pages/user/resetpassword';
 
 function App() {
   return (
@@ -26,8 +28,9 @@ function App() {
         <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/oauth2/redirect" element={<OAuth2RedirectHandler />} />
-        
+        <Route path="/reset-password" element={<ResetPassword />} />
         {/* User Protected Routes */}
         <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
         <Route path="/services/transactions" element={<ProtectedRoute><Transactions /></ProtectedRoute>} />

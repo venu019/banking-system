@@ -1,35 +1,60 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import axios from 'axios'; // Make sure to import axios
 
 const OAuth2RedirectHandler = () => {
     const location = useLocation();
     const navigate = useNavigate();
+    const hasExecuted = useRef(false);
 
     useEffect(() => {
-        // Create a URLSearchParams object from the URL's search string
+        if (hasExecuted.current) {
+            return;
+        }
+
         const params = new URLSearchParams(location.search);
-        
-        // Get the 'token' from the query parameters
         const token = params.get('token');
 
-        if (token) {
-            // If a token is found, store it in localStorage
-            localStorage.setItem('jwtToken', token);
-            
-            // Redirect the user to the dashboard or homepage
-            navigate('/dashboard');
-        } else {
-            // If no token is found, redirect to the login page with an error
-            navigate('/login?error=AuthenticationFailed');
-        }
-    }, [location, navigate]);
+        const completeLogin = async (authToken) => {
+            try {
+                // Step 1: Use the token to fetch user data from the backend
+                const userResponse = await axios.get('http://localhost:9001/api/user/me', {
+                    headers: {
+                        Authorization: `Bearer ${authToken}`
+                    }
+                });
 
-    // This component can just render a simple loading message
-    return (
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-            <p>Loading...</p>
-        </div>
-    );
+                // --- THE FIX ---
+                // Step 2: Create an object that matches the structure of your manual LoginResponse.
+                const loginData = {
+                    accessToken: authToken,
+                    user: userResponse.data,
+                    tokenType: "Bearer"
+                };
+
+                // Step 3: Store the consistent loginData object and the token separately.
+                localStorage.setItem('user', JSON.stringify(loginData));
+                localStorage.setItem('jwtToken', authToken);
+
+                // Step 4: Now that the data structure is consistent, redirect to the dashboard.
+                hasExecuted.current = true;
+                navigate('/dashboard', { replace: true });
+
+            } catch (error) {
+                console.error("Failed to process OAuth2 login:", error);
+                navigate('/login?error=LoginFailed', { replace: true });
+            }
+        };
+
+        if (token) {
+            completeLogin(token);
+        } else {
+            console.error("OAuth2 Redirect: No token found.");
+            navigate('/login?error=AuthenticationFailed', { replace: true });
+        }
+    }, [navigate, location]);
+
+    return <div>Processing authentication...</div>;
 };
 
 export default OAuth2RedirectHandler;
