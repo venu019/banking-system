@@ -72,6 +72,7 @@ export default function AppNavbar() {
                                         <ul className="dropdown-menu dropdown-menu-dark">
                                             <li><NavLink to="/admin/branches" className="dropdown-item">Branch Management</NavLink></li>
                                             {/* --- NEW LINK ADDED HERE --- */}
+                                            <li><NavLink to="/admin/loans" className="dropdown-item">Loan Management</NavLink></li>
                                             <li><NavLink to="/admin/cardsmanagement" className="dropdown-item">Card Management</NavLink></li>
                                         </ul>
                                     </li>

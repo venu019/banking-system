@@ -13,6 +13,7 @@ import KycProfile from './pages/user/profile';
 import OAuth2RedirectHandler from './pages/user/oauth';
 import ProtectedRoute from './pages/user/ProtectedRoute';
 import BankDashboard from './pages/admin/bankDashboard';
+import UserLoanPage from './pages/user/UserLoanPage';
 
 // Admin Pages
 import BranchManagement from './pages/admin/BranchMangement';
@@ -20,6 +21,7 @@ import AdminCardManagement from './pages/admin/CardManagement';
 import ForgotPassword from './pages/user/forgotpassword';
 import ResetPassword from './pages/user/resetpassword';
 import Statements from './pages/user/Transactions';
+import LoanManagementPage from './pages/admin/LoanManagement';
 
 function App() {
   return (
@@ -39,11 +41,14 @@ function App() {
         <Route path="/services/cards" element={<ProtectedRoute><Cardapplication /></ProtectedRoute>} />
         <Route path="/pay" element={<ProtectedRoute><Payment /></ProtectedRoute>} />
         <Route path="/profile/kyc" element={<ProtectedRoute><KycProfile /></ProtectedRoute>} />
+        <Route path="/services/loans" element={<ProtectedRoute><UserLoanPage /></ProtectedRoute>} />
 
         {/* Admin Protected Route */}
         <Route path="/admin/branches" element={<ProtectedRoute><BranchManagement /></ProtectedRoute>} />
         <Route path="/admin/bank-dashboard" element={<ProtectedRoute><BankDashboard /></ProtectedRoute>} />
         <Route path="/admin/cardsmanagement" element={<ProtectedRoute><AdminCardManagement /></ProtectedRoute>} />
+        
+<Route path="/admin/loans" element={<ProtectedRoute><LoanManagementPage /></ProtectedRoute>} />
         {/* Fallback Route for any unknown paths */}
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
