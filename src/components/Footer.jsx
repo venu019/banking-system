@@ -1,122 +1,82 @@
 import React from "react";
 import { Link } from "react-router-dom";
 
+// --- DESIGN TOKENS (Consistent with Navbar) ---
+const glassmorphismStyle = {
+    background: 'rgba(255, 255, 255, 0.7)',
+    backdropFilter: 'blur(10px) saturate(180%)',
+    WebkitBackdropFilter: 'blur(10px) saturate(180%)',
+    borderTop: '1px solid rgba(209, 213, 219, 0.4)'
+};
+
+const brandColors = {
+    navy: '#012169',
+    red: '#E31837'
+};
+
 export default function Footer() {
   return (
-    <footer className="mt-5 pt-4" style={{ backgroundColor: "#0d234f", color: "#cfd8ff" }}>
+    // --- CHANGE: Reduced top padding from pt-4 to pt-3 ---
+    <footer className="mt-5 pt-3" style={glassmorphismStyle}>
       <div className="container">
-        <div className="row gy-4">
-          {/* Brand and blurb */}
-          <div className="col-12 col-md-4">
-            <h5 className="mb-3" style={{ color: "#fff" }}>NeoBank</h5>
-            <p className="mb-3">
-              Secure banking made simple. Manage accounts, pay instantly, and track loans and cards with ease.
+        <div className="row">
+
+          {/* Brand and Social Links */}
+          <div className="col-12 col-lg-4 mb-4 mb-lg-0">
+            <h5 className="fw-bold" style={{ color: brandColors.red }}>NeoBank</h5>
+            <p className="mb-2" style={{ color: brandColors.navy }}>
+              Secure banking made simple and accessible.
             </p>
-            <div className="d-flex gap-3">
-              <a href="#!" aria-label="Twitter" className="text-decoration-none" style={{ color: "#cfd8ff" }}>
-                <i className="bi bi-twitter"></i>
-              </a>
-              <a href="#!" aria-label="LinkedIn" className="text-decoration-none" style={{ color: "#cfd8ff" }}>
-                <i className="bi bi-linkedin"></i>
-              </a>
-              <a href="#!" aria-label="GitHub" className="text-decoration-none" style={{ color: "#cfd8ff" }}>
-                <i className="bi bi-github"></i>
-              </a>
+            <div className="d-flex gap-3 fs-5">
+              <a href="#!" aria-label="Twitter" style={{ color: brandColors.navy }}><i className="bi bi-twitter"></i></a>
+              <a href="#!" aria-label="LinkedIn" style={{ color: brandColors.navy }}><i className="bi bi-linkedin"></i></a>
+              <a href="#!" aria-label="GitHub" style={{ color: brandColors.navy }}><i className="bi bi-github"></i></a>
             </div>
           </div>
 
-          {/* Quick links */}
-          <div className="col-6 col-md-2">
-            <h6 className="mb-3" style={{ color: "#fff" }}>Quick Links</h6>
+          {/* Quick Links */}
+          <div className="col-6 col-lg-2">
+            <h6 className="fw-semibold" style={{ color: brandColors.red }}>Links</h6>
             <ul className="list-unstyled mb-0">
-              <li className="mb-2">
-                <Link to="/" className="text-decoration-none" style={{ color: "#cfd8ff" }}>
-                  Home
-                </Link>
-              </li>
-              <li className="mb-2">
-                <Link to="/accounts" className="text-decoration-none" style={{ color: "#cfd8ff" }}>
-                  My Accounts
-                </Link>
-              </li>
-              <li className="mb-2">
-                <Link to="/pay" className="text-decoration-none" style={{ color: "#cfd8ff" }}>
-                  Pay / Transfer
-                </Link>
-              </li>
-              <li className="mb-2">
-                <Link to="/transactions" className="text-decoration-none" style={{ color: "#cfd8ff" }}>
-                  Transactions
-                </Link>
-              </li>
+              {/* --- CHANGE: Reduced margin-bottom from mb-2 to mb-1 --- */}
+              <li className="mb-1"><Link to="/dashboard" className="text-decoration-none" style={{ color: brandColors.navy }}>Home</Link></li>
+              <li className="mb-1"><Link to="/accounts" className="text-decoration-none" style={{ color: brandColors.navy }}>Accounts</Link></li>
+              <li className="mb-1"><Link to="/support" className="text-decoration-none" style={{ color: brandColors.navy }}>Support</Link></li>
             </ul>
           </div>
-
-          {/* Services */}
-          <div className="col-6 col-md-3">
-            <h6 className="mb-3" style={{ color: "#fff" }}>Services</h6>
-            <ul className="list-unstyled mb-0">
-              <li className="mb-2">
-                <Link to="/services/loans" className="text-decoration-none" style={{ color: "#cfd8ff" }}>
-                  Loans
-                </Link>
-              </li>
-              <li className="mb-2">
-                <Link to="/services/cards" className="text-decoration-none" style={{ color: "#cfd8ff" }}>
-                  Cards
-                </Link>
-              </li>
-              <li className="mb-2">
-                <Link to="/accounts/statements" className="text-decoration-none" style={{ color: "#cfd8ff" }}>
-                  Statements
-                </Link>
-              </li>
-              <li className="mb-2">
-                <Link to="/support" className="text-decoration-none" style={{ color: "#cfd8ff" }}>
-                  Support
-                </Link>
-              </li>
+          
+          {/* Legal Links */}
+          <div className="col-6 col-lg-2">
+              <h6 className="fw-semibold" style={{ color: brandColors.red }}>Legal</h6>
+              <ul className="list-unstyled mb-0">
+                <li className="mb-1"><Link to="/privacy" className="text-decoration-none" style={{ color: brandColors.navy }}>Privacy</Link></li>
+                <li className="mb-1"><Link to="/terms" className="text-decoration-none" style={{ color: brandColors.navy }}>Terms</Link></li>
+                <li className="mb-1"><Link to="/security" className="text-decoration-none" style={{ color: brandColors.navy }}>Security</Link></li>
             </ul>
           </div>
 
           {/* Contact */}
-          <div className="col-12 col-md-3">
-            <h6 className="mb-3" style={{ color: "#fff" }}>Contact</h6>
-            <ul className="list-unstyled mb-3">
-              <li className="mb-2">
-                <i className="bi bi-envelope me-2"></i> support@neobank.com
+          <div className="col-12 col-lg-4 mt-4 mt-lg-0">
+            <h6 className="fw-semibold" style={{ color: brandColors.red }}>Contact Us</h6>
+            <ul className="list-unstyled mb-0" style={{ color: brandColors.navy }}>
+              <li className="mb-1 d-flex align-items-center">
+                <i className="bi bi-envelope me-2"></i>
+                <a href="mailto:support@neobank.com" className="text-decoration-none" style={{ color: brandColors.navy }}>support@neobank.com</a>
               </li>
-              <li className="mb-2">
-                <i className="bi bi-telephone me-2"></i> +91 80-1234-5678
-              </li>
-              <li className="mb-2">
+              <li className="d-flex align-items-center">
                 <i className="bi bi-geo-alt me-2"></i> Bengaluru, IN
               </li>
             </ul>
-            <div className="d-flex gap-2">
-              <Link to="/privacy" className="text-decoration-none" style={{ color: "#cfd8ff" }}>
-                Privacy
-              </Link>
-              <span>·</span>
-              <Link to="/terms" className="text-decoration-none" style={{ color: "#cfd8ff" }}>
-                Terms
-              </Link>
-              <span>·</span>
-              <Link to="/security" className="text-decoration-none" style={{ color: "#cfd8ff" }}>
-                Security
-              </Link>
-            </div>
           </div>
         </div>
 
-        <hr className="my-4" style={{ borderColor: "rgba(255,255,255,.15)" }} />
+        {/* --- CHANGE: Reduced margin from my-4 to my-3 --- */}
+        <hr className="my-3" style={{ borderColor: "rgba(1, 33, 105, 0.2)" }} />
 
-        <div className="d-flex flex-column flex-md-row align-items-center justify-content-between pb-4">
-          <small className="mb-2 mb-md-0" style={{ color: "#cfd8ff" }}>
-            © {new Date().getFullYear()} NeoBank. All rights reserved.
-          </small>
-          <small className="text-muted">
-            Made with Bootstrap 5 · Theme color: Navy
+        {/* --- CHANGE: Reduced bottom padding from pb-4 to pb-3 --- */}
+        <div className="d-flex align-items-center justify-content-center pb-3">
+          <small style={{ color: brandColors.navy }}>
+            &copy; {new Date().getFullYear()} NeoBank. All rights reserved.
           </small>
         </div>
       </div>

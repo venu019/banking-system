@@ -1,209 +1,240 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import 'bootstrap/dist/css/bootstrap.min.css';
+import { Container, Table, Button, Alert, Modal, Form, Row, Col } from 'react-bootstrap';
+import { useNavigate, Link } from "react-router-dom";
 import AppNavbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
-import { Link } from 'react-router-dom';
+import 'bootstrap-icons/font/bootstrap-icons.css';
 
-const API_BASE_URL = 'http://localhost:9003/api/branches'; // Your branch service port
+const BRANCHES_API_URL = 'http://localhost:9003/api/branches';
+
+// --- DESIGN TOKENS ---
+const brandColors = {
+  navy: '#012169',
+  red: '#E31837',
+  lightGray: '#f8f9fa'
+};
 
 const BranchManagement = () => {
-    const navigate = useNavigate();
+  const navigate = useNavigate();
+  const [branches, setBranches] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
-    const [branches, setBranches] = useState([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState(null);
+  // Modal state for both create and edit
+  const [showModal, setShowModal] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingBranchId, setEditingBranchId] = useState(null);
+  
+  const [formData, setFormData] = useState({
+    branchName: '',
+    ifscCode: '',
+    street: '',
+    city: '',
+    state: '',
+    postalCode: '',
+    country: 'India',
+    email: '',
+    phoneNumber: ''
+  });
 
-    const [isEditing, setIsEditing] = useState(false);
-    const [currentBranchId, setCurrentBranchId] = useState(null);
-    const [formData, setFormData] = useState({
-        branchName: '',
-        ifscCode: '',
-        address: { street: '', city: '', state: '', postalCode: '', country: 'India' },
-        // Use phoneNumber to match the server response
-        contact: { email: '', phoneNumber: '' }
-    });
-
-    const fetchBranches = async () => {
-        try {
-            const token = JSON.parse(localStorage.getItem("user"))?.accessToken;
-            if (!token) {
-                navigate("/login");
-                return;
-            }
-            const response = await axios.get(API_BASE_URL, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            setBranches(response.data);
-        } catch (err) {
-            setError("Failed to fetch branches. Please ensure you have ADMIN rights.");
-            console.error("Fetch branches error:", err);
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        fetchBranches();
-    }, [navigate]);
-
-    const handleLogout = () => {
-        localStorage.removeItem("user");
-        localStorage.removeItem("jwtToken");
+  const fetchBranches = async () => {
+    setIsLoading(true);
+    setError('');
+    try {
+      const token = JSON.parse(localStorage.getItem('user'))?.accessToken;
+      if (!token) {
         navigate("/login");
-    };
-
-    const handleInputChange = (e) => {
-        const { name, value } = e.target;
-        const [parent, child] = name.split('.');
-
-        if (child) {
-            setFormData(prev => ({
-                ...prev,
-                [parent]: { ...prev[parent], [child]: value }
-            }));
-        } else {
-            setFormData(prev => ({ ...prev, [name]: value }));
-        }
-    };
-
-    const resetForm = () => {
-        setIsEditing(false);
-        setCurrentBranchId(null);
-        setFormData({
-            branchName: '',
-            ifscCode: '',
-            address: { street: '', city: '', state: '', postalCode: '', country: 'India' },
-            contact: { email: '', phoneNumber: '' } // Reset with phoneNumber
-        });
-    };
-
-    const handleEditClick = (branch) => {
-        setIsEditing(true);
-        setCurrentBranchId(branch.id);
-        setFormData({
-            branchName: branch.branchName,
-            ifscCode: branch.ifscCode,
-            address: branch.address,
-            contact: branch.contact
-        });
-        window.scrollTo(0, 0);
-    };
-    
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        const token = JSON.parse(localStorage.getItem("user"))?.accessToken;
-        const url = isEditing ? `${API_BASE_URL}/${currentBranchId}` : API_BASE_URL;
-        const method = isEditing ? 'put' : 'post';
-
-        try {
-            await axios[method](url, formData, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            alert(`Branch successfully ${isEditing ? 'updated' : 'created'}!`);
-            resetForm();
-            fetchBranches();
-        } catch (err) {
-            alert(`Error: Could not ${isEditing ? 'update' : 'create'} branch.`);
-            console.error("Submit error:", err.response?.data || err.message);
-        }
-    };
-
-    const handleDelete = async (id) => {
-        if (window.confirm("Are you sure you want to delete this branch?")) {
-            try {
-                const token = JSON.parse(localStorage.getItem("user"))?.accessToken;
-                await axios.delete(`${API_BASE_URL}/${id}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                alert("Branch deleted successfully.");
-                fetchBranches(); 
-            } catch (err) {
-                alert("Error: Could not delete branch.");
-                console.error("Delete error:", err.response?.data || err.message);
-            }
-        }
-    };
-    
-    if (isLoading) {
-        return <div className="text-center p-5">Loading branch data...</div>;
+        return;
+      }
+      const headers = { 'Authorization': `Bearer ${token}` };
+      const res = await axios.get(BRANCHES_API_URL, { headers });
+      setBranches(res.data);
+    } catch (err) {
+      setError('Failed to load branches. Please ensure you are logged in with admin privileges.');
+    } finally {
+      setIsLoading(false);
     }
+  };
 
-    return (
-        <>
-            <AppNavbar /> {/* Removed onLogout as the navbar handles it */}
-            <div className="container py-5">
-                <h2 className="mb-4">Branch Management</h2>
-                
-                <div className="card shadow-sm mb-5">
-                    <div className="card-header h5">
-                        {isEditing ? 'Edit Branch' : 'Create New Branch'}
-                    </div>
-                    <div className="card-body">
-                        <form onSubmit={handleSubmit} noValidate>
-                            <div className="row g-4">
-                                <div className="col-md-6"><label className="form-label">Branch Name</label><input type="text" className="form-control" name="branchName" value={formData.branchName} onChange={handleInputChange} required /></div>
-                                <div className="col-md-6"><label className="form-label">IFSC Code</label><input type="text" className="form-control" name="ifscCode" value={formData.ifscCode} onChange={handleInputChange} required /></div>
-                                <div className="col-12"><hr/><h5 className="text-muted">Address</h5></div>
-                                <div className="col-md-12"><label className="form-label">Street</label><input type="text" className="form-control" name="address.street" value={formData.address.street} onChange={handleInputChange} required /></div>
-                                <div className="col-md-4"><label className="form-label">City</label><input type="text" className="form-control" name="address.city" value={formData.address.city} onChange={handleInputChange} required /></div>
-                                <div className="col-md-4"><label className="form-label">State</label><input type="text" className="form-control" name="address.state" value={formData.address.state} onChange={handleInputChange} required /></div>
-                                <div className="col-md-4"><label className="form-label">Postal Code</label><input type="text" className="form-control" name="address.postalCode" value={formData.address.postalCode} onChange={handleInputChange} required /></div>
-                                <div className="col-12"><hr/><h5 className="text-muted">Contact</h5></div>
-                                <div className="col-md-6"><label className="form-label">Email</label><input type="email" className="form-control" name="contact.email" value={formData.contact.email} onChange={handleInputChange} required /></div>
-                                
-                                {/* --- CORRECTED PHONE INPUT --- */}
-                                <div className="col-md-6">
-                                    <label className="form-label">Phone</label>
-                                    <input 
-                                        type="tel" 
-                                        className="form-control" 
-                                        name="contact.phoneNumber" 
-                                        value={formData.contact.phoneNumber} 
-                                        onChange={handleInputChange} 
-                                        required 
-                                    />
-                                </div>
-                            </div>
-                            <div className="d-flex justify-content-end mt-4">
-                                {isEditing && <button type="button" className="btn btn-secondary me-2" onClick={resetForm}>Cancel Edit</button>}
-                                <button type="submit" className="btn btn-primary">{isEditing ? 'Update Branch' : 'Create Branch'}</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
+  useEffect(() => {
+    fetchBranches();
+  }, [navigate]);
 
-                <h3 className="mb-3">Existing Branches</h3>
-                {error && <div className="alert alert-danger">{error}</div>}
-                {branches.length > 0 ? (
-    <div className="list-group">
-        {branches.map(branch => (
-            <div key={branch.id} className="list-group-item list-group-item-action flex-column align-items-start">
-                <div className="d-flex w-100 justify-content-between">
-                    <h5 className="mb-1">{branch.branchName}</h5>
-                    <small>ID: {branch.id}</small>
-                </div>
-                <p className="mb-1"><strong>IFSC:</strong> {branch.ifscCode} | <strong>Location:</strong> {branch.address.city}, {branch.address.state}</p>
-                <p className="mb-1"><strong>Contact:</strong> {branch.contact.email} | {branch.contact.phoneNumber}</p>
-                <div className="mt-2">
-                    <button className="btn btn-sm btn-outline-secondary me-2" onClick={() => handleEditClick(branch)}>Edit Branch</button>
-                    <button className="btn btn-sm btn-outline-danger me-2" onClick={() => handleDelete(branch.id)}>Delete Branch</button>
-                    {/* --- NEW BUTTON TO NAVIGATE TO THE DASHBOARD --- */}
-                    <Link to={`/admin/bank-dashboard?branchId=${branch.id}`} className="btn btn-sm btn-primary">
-                        Manage Users & Stats
-                    </Link>
-                </div>
+  const handleShowCreateModal = () => {
+    setIsEditing(false);
+    setEditingBranchId(null);
+    setFormData({
+      branchName: '', ifscCode: '', street: '', city: '', state: '',
+      postalCode: '', country: 'India', email: '', phoneNumber: ''
+    });
+    setShowModal(true);
+  };
+
+  const handleShowEditModal = (branch) => {
+    setIsEditing(true);
+    setEditingBranchId(branch.id);
+    setFormData({
+      branchName: branch.branchName,
+      ifscCode: branch.ifscCode,
+      street: branch.address.street,
+      city: branch.address.city,
+      state: branch.address.state,
+      postalCode: branch.address.postalCode,
+      country: branch.address.country,
+      email: branch.contact.email,
+      phoneNumber: branch.contact.phoneNumber
+    });
+    setShowModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setShowModal(false);
+    setIsEditing(false);
+    setEditingBranchId(null);
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+    try {
+      const token = JSON.parse(localStorage.getItem('user'))?.accessToken;
+      if (!token) {
+        setError('Your session has expired. Please log in again.');
+        return;
+      }
+      const headers = { 'Authorization': `Bearer ${token}` };
+
+      const payload = {
+        branchName: formData.branchName,
+        ifscCode: formData.ifscCode,
+        address: {
+          street: formData.street, city: formData.city, state: formData.state,
+          postalCode: formData.postalCode, country: formData.country
+        },
+        contact: { email: formData.email, phoneNumber: formData.phoneNumber }
+      };
+
+      if (isEditing) {
+        await axios.put(`${BRANCHES_API_URL}/${editingBranchId}`, payload, { headers });
+        setSuccess('Branch updated successfully!');
+      } else {
+        await axios.post(BRANCHES_API_URL, payload, { headers });
+        setSuccess('Branch created successfully!');
+      }
+      handleCloseModal();
+      fetchBranches();
+    } catch (err) {
+      setError(isEditing ? 'Failed to update the branch.' : 'Failed to create the branch.');
+    }
+  };
+
+  const handleDelete = async (branchId) => {
+    if (!window.confirm('Are you sure you want to delete this branch? This action cannot be undone.')) return;
+    
+    setError('');
+    setSuccess('');
+    try {
+      const token = JSON.parse(localStorage.getItem('user'))?.accessToken;
+      if (!token) {
+        setError('Your session has expired. Please log in again.');
+        return;
+      }
+      const headers = { 'Authorization': `Bearer ${token}` };
+      await axios.delete(`${BRANCHES_API_URL}/${branchId}`, { headers });
+      setSuccess('Branch deleted successfully!');
+      fetchBranches();
+    } catch (err) {
+      setError('Failed to delete the branch. It may be linked to existing accounts.');
+    }
+  };
+
+  return (
+    <div style={{ backgroundColor: brandColors.lightGray, minHeight: '100vh' }}>
+      <AppNavbar />
+      <Container className="py-5">
+        <div className="d-flex justify-content-between align-items-center mb-4">
+            <h1 className="fw-bold" style={{ color: brandColors.navy }}>Branch Management</h1>
+            <Button variant="primary" onClick={handleShowCreateModal} className="btn-main">
+                <i className="bi bi-plus-circle me-2"></i>Create New Branch
+            </Button>
+        </div>
+
+        {error && <Alert variant="danger" onClose={() => setError('')} dismissible>{error}</Alert>}
+        {success && <Alert variant="success" onClose={() => setSuccess('')} dismissible>{success}</Alert>}
+
+        <div className="card shadow-sm">
+            <div className="table-responsive">
+                <Table hover className="mb-0 align-middle">
+                    <thead><tr><th>Branch Name</th><th>IFSC</th><th>City</th><th>Actions</th></tr></thead>
+                    <tbody>
+                        {isLoading ? (
+                            <tr><td colSpan="4" className="text-center p-5">Loading...</td></tr>
+                        ) : branches.length > 0 ? branches.map(branch => (
+                            <tr key={branch.id}>
+                                <td>{branch.branchName}</td>
+                                <td>{branch.ifscCode}</td>
+                                <td>{branch.address.city}</td>
+                                <td>
+                                    <div className="btn-group btn-group-sm">
+                                        <Button variant="outline-primary" onClick={() => handleShowEditModal(branch)}><i className="bi bi-pencil-fill"></i></Button>
+                                        <Button variant="outline-danger" onClick={() => handleDelete(branch.id)}><i className="bi bi-trash-fill"></i></Button>
+                                        <Link to={`/admin/bank-dashboard?branchId=${branch.id}`} className="btn btn-outline-secondary"><i className="bi bi-gear-fill"></i></Link>
+                                    </div>
+                                </td>
+                            </tr>
+                        )) : (
+                            <tr><td colSpan="4" className="text-center p-5 text-muted">No branches created yet.</td></tr>
+                        )}
+                    </tbody>
+                </Table>
             </div>
-        ))}
+        </div>
+
+        <Modal show={showModal} onHide={handleCloseModal} centered>
+          <Modal.Header closeButton style={{backgroundColor: brandColors.navy, color: 'white'}}>
+            <Modal.Title><i className="bi bi-bank2 me-2"></i>{isEditing ? 'Edit Branch' : 'Create New Branch'}</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <Form onSubmit={handleSubmit}>
+              <Row>
+                  <Col md={6}><Form.Group className="mb-3"><Form.Label>Branch Name</Form.Label><Form.Control type="text" name="branchName" value={formData.branchName} onChange={handleChange} required /></Form.Group></Col>
+                  <Col md={6}><Form.Group className="mb-3"><Form.Label>IFSC Code</Form.Label><Form.Control type="text" name="ifscCode" value={formData.ifscCode} onChange={handleChange} required /></Form.Group></Col>
+              </Row>
+              <Form.Group className="mb-3"><Form.Label>Street</Form.Label><Form.Control type="text" name="street" value={formData.street} onChange={handleChange} required /></Form.Group>
+              <Row>
+                  <Col md={4}><Form.Group className="mb-3"><Form.Label>City</Form.Label><Form.Control type="text" name="city" value={formData.city} onChange={handleChange} required /></Form.Group></Col>
+                  <Col md={4}><Form.Group className="mb-3"><Form.Label>State</Form.Label><Form.Control type="text" name="state" value={formData.state} onChange={handleChange} required /></Form.Group></Col>
+                  <Col md={4}><Form.Group className="mb-3"><Form.Label>Postal Code</Form.Label><Form.Control type="text" name="postalCode" value={formData.postalCode} onChange={handleChange} required /></Form.Group></Col>
+              </Row>
+              <Row>
+                  <Col md={6}><Form.Group className="mb-3"><Form.Label>Contact Email</Form.Label><Form.Control type="email" name="email" value={formData.email} onChange={handleChange} required /></Form.Group></Col>
+                  <Col md={6}><Form.Group className="mb-3"><Form.Label>Contact Phone</Form.Label><Form.Control type="tel" name="phoneNumber" value={formData.phoneNumber} onChange={handleChange} required /></Form.Group></Col>
+              </Row>
+              <div className="d-flex justify-content-end mt-3">
+                <Button variant="secondary" onClick={handleCloseModal} className="me-2">Cancel</Button>
+                <Button variant="primary" type="submit" className="btn-main">{isEditing ? 'Update Branch' : 'Create Branch'}</Button>
+              </div>
+            </Form>
+          </Modal.Body>
+        </Modal>
+      </Container>
+      <Footer />
+      <style>{`
+        thead th { background-color: ${brandColors.navy}; color: white; }
+        .table-hover tbody tr:hover { background-color: rgba(1, 33, 105, 0.03); }
+        .btn-main { background-color: ${brandColors.navy}; border-color: ${brandColors.navy}; }
+        .btn-main:hover { background-color: ${brandColors.red}; border-color: ${brandColors.red}; }
+      `}</style>
     </div>
-) : (
-    <p>No branches have been created yet.</p>
-)}
-            </div>
-            <Footer />
-        </>
-    );
+  );
 };
 
 export default BranchManagement;
