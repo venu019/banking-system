@@ -145,8 +145,8 @@ function MyAccounts() {
         }
     };
     
-    const viewStatements = (acc) => navigate(`/accounts/statements?acc=${acc.accountNumber}`);
-    const viewTransactions = (acc) => navigate(`/transactions?acc=${acc.accountNumber}`);
+    const viewStatements = (acc) => navigate(`/accounts/statements?acc=${acc.accountNo}`);
+    const viewTransactions = (acc) => navigate(`/transactions?acc=${acc.accountNo}`);
 
     if (isLoading) {
         return <div className="text-center p-5">Loading Accounts...</div>;

@@ -19,6 +19,7 @@ import BranchManagement from './pages/admin/BranchMangement';
 import AdminCardManagement from './pages/admin/CardManagement';
 import ForgotPassword from './pages/user/forgotpassword';
 import ResetPassword from './pages/user/resetpassword';
+import Statements from './pages/user/Transactions';
 
 function App() {
   return (
@@ -33,7 +34,7 @@ function App() {
         <Route path="/reset-password" element={<ResetPassword />} />
         {/* User Protected Routes */}
         <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-        <Route path="/services/transactions" element={<ProtectedRoute><Transactions /></ProtectedRoute>} />
+        <Route path="/services/transactions" element={<ProtectedRoute><Statements /></ProtectedRoute>} />
         <Route path="/accounts" element={<ProtectedRoute><MyAccounts /></ProtectedRoute>} />
         <Route path="/services/cards" element={<ProtectedRoute><Cardapplication /></ProtectedRoute>} />
         <Route path="/pay" element={<ProtectedRoute><Payment /></ProtectedRoute>} />

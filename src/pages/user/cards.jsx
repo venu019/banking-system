@@ -42,6 +42,7 @@ function CardApplication() {
 
         setAccounts(accountsRes.data);
         setExistingCards(cardsRes.data);
+        console.log(cardsRes.data);
         setBankMap(new Map(banksRes.data.map(bank => [bank.id, bank])));
       } catch (error) {
         console.error("Failed to fetch initial data:", error);
