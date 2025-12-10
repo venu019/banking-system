@@ -22,13 +22,14 @@ import ForgotPassword from './pages/user/forgotpassword';
 import ResetPassword from './pages/user/resetpassword';
 import Statements from './pages/user/Transactions';
 import LoanManagementPage from './pages/admin/LoanManagement';
+import PreLoginHome from './pages/public/publichome';
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
         {/* Public Routes */}
-        <Route path="/" element={<Navigate to="/login" replace />} />
+        <Route path="/" element={<PreLoginHome />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />

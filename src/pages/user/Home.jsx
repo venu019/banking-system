@@ -46,78 +46,15 @@ const services = [
     title: "Loans & EMI",
     description: "Personalized loan offers with transparent terms.",
     path: "/services/loans",
-    image:
-      "https://images.pexels.com/photos/4386466/pexels-photo-4386466.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=1200",
-    icon: "🎯",
-    badge: "Flexible"
+    image: "https://bsmedia.business-standard.com/_media/bs/img/article/2017-03/01/full/1488322800-0994.jpg?im=FeatureCrop,size=(826,465)"
   }
 ];
 
-const heroSlides = [
-  {
-    title: "Banking that moves with you",
-    subtitle: "Secure, fast and built for the digital lifestyle.",
-    cta: "View Profile",
-    ctaPath: "/profile/kyc",
-    image:
-      "https://images.pexels.com/photos/3184291/pexels-photo-3184291.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260"
-  },
-  {
-    title: "Payments without the wait",
-    subtitle: "Send and receive instantly — with complete peace of mind.",
-    cta: "Make a Transfer",
-    ctaPath: "/pay",
-    image:
-      "https://images.pexels.com/photos/4386465/pexels-photo-4386465.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260"
-  },
-  {
-    title: "Cards, rewards & protection",
-    subtitle: "Cards designed for spending and savings that actually work for you.",
-    cta: "Explore Cards",
-    ctaPath: "/services/cards",
-    image:
-      "https://images.pexels.com/photos/4386437/pexels-photo-4386437.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260"
-  }
-];
-
-const stories = [
-  {
-    name: "Ananya R.",
-    role: "Small Business Owner",
-    quote: "NeoBank automated payroll and reporting — saved me hours every week.",
-    image: "https://randomuser.me/api/portraits/women/68.jpg",
-    servicePath: "/accounts"
-  },
-  {
-    name: "Rahul K.",
-    role: "Freelancer",
-    quote: "Fast transfers and clean statements — my clients love it.",
-    image: "https://randomuser.me/api/portraits/men/45.jpg",
-    servicePath: "/pay"
-  },
-  {
-    name: "Priya S.",
-    role: "Product Manager",
-    quote: "Loan application was transparent and approval was quick.",
-    image: "https://randomuser.me/api/portraits/women/44.jpg",
-    servicePath: "/services/loans"
-  }
-];
-
-const faqs = [
-  {
-    q: "How do I download my statements?",
-    a: "Go to Accounts → Statements and pick the period. You can download PDF or CSV instantly."
-  },
-  {
-    q: "Is my data secure?",
-    a: "Yes — we use bank-level encryption and strict security controls."
-  },
-  {
-    q: "Can I schedule recurring payments?",
-    a: "Yes — use the Payments page and select 'Schedule' for recurring transfers."
-  }
-];
+// --- About Bank Content ---
+const aboutBank = {
+    mission: "To empower our clients by simplifying their financial lives through innovative technology and personalized, transparent banking solutions.",
+    about: "NeoBank is not just a bank; it's a financial partner for the digital age. Founded on the principles of innovation and integrity, we leverage cutting-edge technology to deliver a banking experience that is both powerful and intuitive. We are committed to demystifying finance and providing our customers with the tools they need to thrive in an ever-changing economic landscape."
+};
 
 function Dashboard() {
   const navigate = useNavigate();
